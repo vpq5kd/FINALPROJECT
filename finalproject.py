@@ -30,6 +30,9 @@ global bricklist
 bricklist = []
 global speedlist
 speedlist = []
+global score
+score = []
+
 #outside functions
 for i in range(0,101): #generates the basic mario background for game play
     c = (400+(i*1920))
@@ -56,6 +59,9 @@ for i in range(0, 101): #generates the bricks for mario to jump on ***WORK IN PR
     bricklist.append(nestedbricklist2) #stores everything into a list that can be called to eventually 'draw' the map
 mariosprite = uvage.from_image(400,675,'mariosprite.png') #mario generation
 mariosprite.scale_by(.03)
+
+coin = uvage.from_image(400,300,'coin image.png')
+coin.scale_by(.05)
 bottomborder = uvage.from_color(-500,700, 'black', 10000, 10) #used as a way to get mario to 'interact' with the floor of the picture background
 # Jump Function:
 def jump(): #THIS IS A TRIAL, IT DIDN'T WORK. problems arose with jumping more than once
@@ -84,19 +90,22 @@ def trialjump(): #next iteration of jump, based on the jump function in b_ball_s
     mariosprite.move_speed()
     mariosprite.move_to_stop_overlapping(bottomborder)
 
+def coin_count():
+
+    if mariosprite.top_touches(coin):
+        score.append(1)
+        coin.move(0,1000)
 
 
 
 
 
 #tick:
+
 def tick():
 
-    if uvage.is_pressing('right arrow'): #mimicks mario gameplay, camera moves to the right but not to the left
-        mariosprite.move(13,0)
-        camera.move(9,0)
-    if uvage.is_pressing('left arrow'):
-        mariosprite.move(-10,0)
+    scoreboard = uvage.from_text(1300 , -200, str(int(len(score))), 40, 'black')
+
     camera.draw(bottomborder)
     for i in range(0,101): #draws the background onto the camera
         camera.draw(backgroundlist[i])
@@ -104,8 +113,19 @@ def tick():
         camera.draw(bricklist[5][i])
 
     camera.draw(mariosprite) #draws mario
+    camera.draw(coin)
+
+    camera.draw(scoreboard)
+    if uvage.is_pressing('right arrow'): #mimicks mario gameplay, camera moves to the right but not to the left
+        mariosprite.move(13,0)
+
+        camera.move(9,0)
+
+    if uvage.is_pressing('left arrow'):
+        mariosprite.move(-10,0)
     #jump()
     trialjump()
+    coin_count()
     for i in range(0,3):#TRIAL FOR INTERACTION WITH BRICKS ***major problem with not landing directly on them***
         if bricklist[5][i].top_touches(mariosprite):
             mariosprite.move_to_stop_overlapping(bricklist[5][i])
