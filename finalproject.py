@@ -20,6 +20,7 @@ Health bar: the health bar will be a visual of three hearts. If the user touches
 #imports:
 import uvage
 import random
+import numpy as np
 #camera:
 camera = uvage.Camera(1920,1080)
 camera.center = [400,300]
@@ -28,12 +29,19 @@ global backgroundlist
 backgroundlist = []
 global bricklist
 bricklist = []
+global bricklist_tick
+bricklist_tick = []
 global speedlist
 speedlist = []
 global score
 score = []
 global liveslist
 liveslist = []
+global goombalist
+goombalist = []
+global goombalist_tick
+goombalist_tick = []
+
 
 #outside functions
 for i in range(0,101): #generates the basic mario background for game play
@@ -69,34 +77,53 @@ mariosprite.scale_by(.03)
 goomba = uvage.from_image(1000,0,'goomba.png')
 goomba.scale_by(.3)
 
+def goombawrite(x,y):
+    goombainside = uvage.from_image(1000,0,'goomba.png')
+    goombainside.scale_by(.3)
+    goombareturn = goombainside.copy_at(x,y)
+    return goombareturn
+
+
+for i in range(0,10001):
+    goomba2 = goombawrite(i,0)
+    goombalist.append(goomba2)
+
 coin = uvage.from_image(400,300,'coin image.png')
 coin.scale_by(.15)
+coinlist = []
+for i in range(0,3):
+    c = 200*i
+    coin2 = coin.copy_at(800 + c,425)
+    coinlist.append(coin2)
+    coin2 = coin.copy_at(1200+c,225)
+    coinlist.append(coin2)
 bottomborder = uvage.from_color(-500,700, 'black', 10000, 10) #used as a way to get mario to 'interact' with the floor of the picture background
+
 
 #trialjump:
 def trialjump(sprite):
-    if sprite != goomba:#next iteration of jump, based on the jump function in b_ball_shot.py
+    if sprite == mariosprite:#next iteration of jump, based on the jump function in b_ball_shot.py
         if sprite.bottom_touches(bottomborder):
             if uvage.is_pressing('space'):
-                sprite.speedy = -35
-    sprite.speedy +=1.25
+                sprite.speedy = -25
+    sprite.speedy +=.5
     sprite.move_speed()
     sprite.move_to_stop_overlapping(bottomborder)
 def brickjump(sprite, brick):
-    if sprite != goomba:#next iteration of jump, based on the jump function in b_ball_shot.py
+    if sprite == mariosprite:#next iteration of jump, based on the jump function in b_ball_shot.py
         if sprite.bottom_touches(brick):
             if uvage.is_pressing('space'):
-                sprite.speedy = -35
-    sprite.speedy +=1.25
+                sprite.speedy = -25
+    sprite.speedy +=.5
     sprite.move_speed()
     sprite.move_to_stop_overlapping(brick)
 
-def coin_count():
+def coin_count(coin_):
 
-    if mariosprite.touches(coin):
+    if mariosprite.touches(coin_):
         score.append(1)
-        coin.move(0,1000)
-def goombamove(heart):
+        coin_.move(0,1000)
+def goombamove(goomba,heart):
     goomba.speedx = -1
 
     goomba.move_speed()
@@ -107,59 +134,72 @@ def goombamove(heart):
         liveslist.append(1)
         goomba.move(0,1500)
         heart[-len(liveslist)].move(0,1500)
+def goombadraw(goomba):
+    camera.draw(goomba)
+    goombalist_tick.append(goomba)
 
-def bricktouch(sprite):
+
+
+def bricktouch(brick,sprite):
     for i in range(0,3):#TRIAL FOR INTERACTION WITH BRICKS ***major problem with not landing directly on them***
-        if bricklist[5][i].bottom_touches(sprite):
-            sprite.move_to_stop_overlapping(bricklist[5][i])
-        if bricklist[5][i].top_touches(sprite):
-            sprite.move_to_stop_overlapping(bricklist[5][i])
+        if brick.bottom_touches(sprite):
+            sprite.move_to_stop_overlapping(brick)
+        if brick.top_touches(sprite):
+            sprite.move_to_stop_overlapping(brick)
             trialjump(sprite)
-            brickjump(sprite, bricklist[5][i])
+            brickjump(sprite, brick)
 
 
-
+def drawbrick(index):
+    for j in range(0, 3):  # TRIAL FOR INTERACTION TESTING -> generates one set of 'bricks'
+        camera.draw(bricklist[index][j])
+        bricklist_tick.append(bricklist[index][j])
 
 #tick:
-
-def tick():
-
-
-    camera.draw(bottomborder)
-    for i in range(0,101): #draws the background onto the camera
-        camera.draw(backgroundlist[i])
-    for i in range(0,3): #TRIAL FOR INTERACTION TESTING -> generates one set of 'bricks'
-        camera.draw(bricklist[5][i])
-
-    camera.draw(mariosprite) #draws mario
-    camera.draw(goomba)
-
-    camera.draw(coin)
-    scoreboard = uvage.from_text(camera.topright[0]-60, camera.topright[1]+30, str(int(len(score))), 40, 'black')
+def mechanicsfunc(sprite,Goomba,brick = bricklist_tick):
+    trialjump(sprite)
+    trialjump(Goomba)
+    coin_count(coin)
+    for i in range(0,6):
+        coin_count(coinlist[i])
+    for bricks in bricklist_tick:
+        bricktouch(bricks, sprite)
+        bricktouch(bricks, Goomba)
 
 
-    goombamove(heartlist)
-    for i in heartlist:
-        camera.draw(i)
-
-    camera.draw(scoreboard)
-    if uvage.is_pressing('right arrow'): #mimicks mario gameplay, camera moves to the right but not to the left
+def move(scoreboard):
+    if uvage.is_pressing('right arrow') or uvage.is_pressing('d'): #mimicks mario gameplay, camera moves to the right but not to the left
         mariosprite.move(7,0)
         scoreboard.move(5,0)
         camera.move(5,0)
         for heart in heartlist:
             heart.move(5,0)
-    if uvage.is_pressing('left arrow'):
+    if uvage.is_pressing('left arrow') or uvage.is_pressing('a'):
         mariosprite.move(-5,0)
+def tick():
+    goombalist_tick.clear()
+    bricklist_tick.clear()
+    camera.draw(bottomborder)
+    for i in range(0,101): #draws the background onto the camera
+        camera.draw(backgroundlist[i])
+    for i in range(5,7):
+        drawbrick(i)
+    drawbrick(11)
+    camera.draw(mariosprite)
+    goombadraw(goomba)
+    goombadraw(goombalist[800])
+    goombadraw(goombalist[2500])
+    #camera.draw(coin)
+    for i in range(0,6):
+        camera.draw(coinlist[i])
+    scoreboard = uvage.from_text(camera.topright[0]-60, camera.topright[1]+30, str(int(len(score))), 40, 'black')
+    for i in heartlist:
+        camera.draw(i)
+    camera.draw(scoreboard)
+    move(scoreboard)
+    for Goomba in goombalist_tick:
+        goombamove(Goomba,heartlist)
+        mechanicsfunc(mariosprite,Goomba)
 
-    #jump()
-    trialjump(mariosprite)
-    trialjump(goomba)
-    coin_count()
-    bricktouch(mariosprite)
-    bricktouch(goomba)
-
-            #mariosprite.move(0,120)
     camera.display()
-
 uvage.timer_loop(60,tick)
