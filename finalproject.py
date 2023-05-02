@@ -41,23 +41,37 @@ global goombalist
 goombalist = []
 global goombalist_tick
 goombalist_tick = []
-
+global goombaintlist
+goombaintlist = []
+global coinindexlist
+global coinindexlist_1brick
 
 #outside functions
 for i in range(0,101): #generates the basic mario background for game play
     c = (400+(i*1920))
     background = uvage.from_image(c,300, 'mariobackground.jpg')
     backgroundlist.append(background)
+flag = uvage.from_image(7960,400,'marioflag.png')
+flag.scale_by(.5)
+castle = uvage.from_image(8300,550, 'mariocastle.png')
+castle.scale_by(.25)
 for i in range(0, 101): #generates the bricks for mario to jump on ***WORK IN PROGRESS***
     c = i*400
     r = random.randint(0,300)
+    brick = uvage.from_image(0 + c, 100, 'mariobrick.png')
+    brick.scale_by(0.4)
+    brick2 = uvage.from_image(200 + c, 100, 'mariobrick.png')
+    brick2.scale_by(.4)
+    brick3 = uvage.from_image(400 + c, 100, 'mariobrick.png')
+    brick3.scale_by(.4)
+    nestedbricklist = [brick, brick2, brick3]
     brick = uvage.from_image(0+c,300, 'mariobrick.png')
     brick.scale_by(0.4)
     brick2 = uvage.from_image(200+c,300, 'mariobrick.png')
     brick2.scale_by(.4)
     brick3 = uvage.from_image(400+c,300, 'mariobrick.png')
     brick3.scale_by(.4)
-    nestedbricklist = [brick,brick2,brick3]
+    nestedbricklist1 = [brick,brick2,brick3]
     brick = uvage.from_image(0 + c, 500, 'mariobrick.png')
     brick.scale_by(0.4)
     brick2 = uvage.from_image(200 + c, 500, 'mariobrick.png')
@@ -66,6 +80,7 @@ for i in range(0, 101): #generates the bricks for mario to jump on ***WORK IN PR
     brick3.scale_by(.4)
     nestedbricklist2 = [brick,brick2,brick3]
     bricklist.append(nestedbricklist)
+    bricklist.append(nestedbricklist1)
     bricklist.append(nestedbricklist2) #stores everything into a list that can be called to eventually 'draw' the map
 heartlist = []
 for i in range(0,120,40):
@@ -87,17 +102,27 @@ def goombawrite(x,y):
 for i in range(0,10001):
     goomba2 = goombawrite(i,0)
     goombalist.append(goomba2)
-
+coinlist = []
 coin = uvage.from_image(400,300,'coin image.png')
 coin.scale_by(.15)
-coinlist = []
-for i in range(0,3):
-    c = 200*i
-    coin2 = coin.copy_at(800 + c,425)
+coinlist.append(coin)
+coinindexlist = [8,10,12,14,16,23,25,27,35,37,39,47,49]
+coinindexlist_1brick = [46,48,55,57]
+def coincreate(index):
+    for i in range(0,3):
+        c = 200 * i
+        coin2 = coin.copy_at(bricklist[index][0].center[0] + c, bricklist[index][0].center[1]-75)
+        coinlist.append(coin2)
+def coincreate_1brick(index):
+
+    coin2 = coin.copy_at(bricklist[index][0].center[0], bricklist[index][0].center[1] - 75)
     coinlist.append(coin2)
-    coin2 = coin.copy_at(1200+c,225)
-    coinlist.append(coin2)
-bottomborder = uvage.from_color(-500,700, 'black', 10000, 10) #used as a way to get mario to 'interact' with the floor of the picture background
+for item in coinindexlist:
+    coincreate(item)
+for item in coinindexlist_1brick:
+    coincreate_1brick(item)
+
+bottomborder = uvage.from_color(-500,700, 'black', 50000, 10) #used as a way to get mario to 'interact' with the floor of the picture background
 
 
 #trialjump:
@@ -130,6 +155,7 @@ def goombamove(goomba,heart):
     if mariosprite.bottom_touches(goomba):
         goomba.move(0,1500)
         score.append(1)
+        score.append(1)
     elif goomba.touches(mariosprite):
         liveslist.append(1)
         goomba.move(0,1500)
@@ -154,13 +180,20 @@ def drawbrick(index):
     for j in range(0, 3):  # TRIAL FOR INTERACTION TESTING -> generates one set of 'bricks'
         camera.draw(bricklist[index][j])
         bricklist_tick.append(bricklist[index][j])
+def drawbrick_1brick(index):
+    camera.draw(bricklist[index][0])
+    bricklist_tick.append(bricklist[index][0])
+
+        #print(bricklist[index][j])
+
+
 
 #tick:
 def mechanicsfunc(sprite,Goomba,brick = bricklist_tick):
     trialjump(sprite)
     trialjump(Goomba)
     coin_count(coin)
-    for i in range(0,6):
+    for i in range(0,len(coinlist)):
         coin_count(coinlist[i])
     for bricks in bricklist_tick:
         bricktouch(bricks, sprite)
@@ -180,17 +213,35 @@ def tick():
     goombalist_tick.clear()
     bricklist_tick.clear()
     camera.draw(bottomborder)
+
     for i in range(0,101): #draws the background onto the camera
         camera.draw(backgroundlist[i])
-    for i in range(5,7):
-        drawbrick(i)
-    drawbrick(11)
+    camera.draw(flag)
+    camera.draw(castle)
+    for index in coinindexlist:
+        drawbrick(index)
+    for index in coinindexlist_1brick:
+        drawbrick_1brick(index)
+
     camera.draw(mariosprite)
     goombadraw(goomba)
     goombadraw(goombalist[800])
     goombadraw(goombalist[2500])
+    if 3060<= mariosprite.center[0] <=3070:
+        goombaintlist.append(1)
+    if len(goombaintlist)!= 0:
+        goombadraw(goombalist[3300])
+
+    #if 4325<= mariosprite.center[0]<=4330:
+        #goombaintlist.clear()
+   # if 4331<= mariosprite.center[0]<=4341:
+        #goombaintlist.append(1)
+    #print(len(goombaintlist))
+    #if len(goombaintlist) != 0:
+       # goombadraw(goombalist[4600])
+        #goombadraw(goombalist[4700])
     #camera.draw(coin)
-    for i in range(0,6):
+    for i in range(0,len(coinlist)):
         camera.draw(coinlist[i])
     scoreboard = uvage.from_text(camera.topright[0]-60, camera.topright[1]+30, str(int(len(score))), 40, 'black')
     for i in heartlist:
@@ -202,4 +253,6 @@ def tick():
         mechanicsfunc(mariosprite,Goomba)
 
     camera.display()
+    #print(len(goombaintlist))
+    print(mariosprite.center)
 uvage.timer_loop(60,tick)
